@@ -2,4 +2,5 @@ python-dotenv
 openai
 pyupbit
 google-generativeai
-feer-and-greed
+fear-and-greed
+yfinance
