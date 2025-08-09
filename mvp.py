@@ -2,7 +2,7 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 import json
-
+import pyupbit
 
 load_dotenv()
 
@@ -50,6 +50,37 @@ def do_ai_response(ai_result: dict, TICKER: str) -> str:
     except Exception as e:
         return f"오류 발생: {e}"    
 
+def choice_coin():
+    btc_ticker = "KRW-BTC"
+    eth_ticker = "KRW-ETH"
+
+    btc_amount = upbit.get_balance(btc_ticker)
+    eth_amount = upbit.get_balance(eth_ticker)
+
+    btc_orderbook = pyupbit.get_orderbook(btc_ticker)
+    eth_orderbook = pyupbit.get_orderbook(eth_ticker)
+
+    btc_current_price = btc_orderbook['orderbook_units'][0]['ask_price']
+    eth_current_price = eth_orderbook['orderbook_units'][0]['ask_price']
+
+    btc_amount = btc_amount * btc_current_price
+    eth_amount = eth_amount * eth_current_price
+    total_amount =  btc_amount + eth_amount
+
+    print("Current BTC :", btc_amount)
+    print("Current ETH :", eth_amount)
+
+    if btc_amount / total_amount > 0.6:
+        TICKER = eth_ticker
+        percent_result = eth_amount / total_amount * 100
+    else:
+        TICKER = btc_ticker
+        percent_result = btc_amount / total_amount * 100
+
+    print("Choice:", TICKER, percent_result, "%")
+
+    print(upbit.buy_market_order(TICKER, 5000))
+
 
 """
 if __name__ == "__main__":
@@ -91,7 +122,6 @@ if __name__ == "__main__":
 
 
 # 1. 업비트 30일봉 그래프 가져오기
-import pyupbit
 
 df = pyupbit.get_ohlcv("KRW-BTC", count=30, interval='day')
 df2 = pyupbit.get_ohlcv("KRW-ETH", count=30, interval='day')
@@ -144,9 +174,9 @@ ethereum_expert_persona = (
 response = get_ai_response_with_persona(prompt, bitcoin_expert_persona)
 
 #print response
-print("Response")
-print(response)
-print(type(response))
+print("Response BTC")
+#print(response)
+#print(type(response))
 
 cleaned = response.strip().removeprefix("'''json\n").removesuffix("'''")
 print(cleaned)
@@ -159,9 +189,9 @@ prompt = df2.to_json()
 response = get_ai_response_with_persona(prompt, ethereum_expert_persona)
 
 #print response
-print("DF2 Response")
-print(response)
-print(type(response))
+print("Response ETH")
+#print(response)
+#print(type(response))
 
 cleaned = response.strip().removeprefix("'''json\n").removesuffix("'''")
 print(cleaned)
@@ -173,11 +203,12 @@ print(df2_result["decision"])
 # 3. AI 판단에 따라 실제 자동매매 진행.
 import pyupbit
 
+is_buy = 0
+
 access = os.getenv("UPBIT_ACCESS_KEY")
 secret = os.getenv("UPBIT_SECRET_KEY")
 upbit = pyupbit.Upbit(access, secret)
 print("Current balance :", upbit.get_balance("KRW"))
-
 
 import fear_and_greed
 
@@ -186,8 +217,8 @@ fg_index = fear_and_greed.get()
 print(f"Fear & Greed Index: {fg_index}")
 
 if fg_index.value < 40:
-    print(do_ai_response(df1_result, "KRW-BTC"))
-    print(do_ai_response(df2_result, "KRW-ETH"))
+    choice_coin()
+    is_buy = 1
 else:
     print("Skip buy/sell/hold")
 
@@ -204,8 +235,10 @@ current_vix = vix_data['Close'].iloc[-1]
 print(f"현재 VIX 지수: {current_vix}")
 
 if current_vix > 25:
-    print(do_ai_response(df1_result, "KRW-BTC"))
-    print(do_ai_response(df2_result, "KRW-ETH"))
+    choice_coin()
+    is_buy = 1
 else:
     print("Skip buy/sell/hold")
 
+if is_buy == 0:
+    choice_coin()
