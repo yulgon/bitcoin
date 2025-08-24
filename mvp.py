@@ -41,7 +41,8 @@ def do_ai_response(ai_result: dict, TICKER: str) -> str:
         if ai_result["decision"] == "buy":
             return_value = upbit.buy_market_order(TICKER, 5000)
         elif ai_result["decision"] == "sell":
-            return_value = upbit.sell_market_order(TICKER, 5000)
+            #return_value = upbit.sell_market_order(TICKER, 5000)
+            pass
         elif ai_result["decision"] == "hold":
             pass
         # 응답 텍스트 반환
@@ -70,7 +71,7 @@ def choice_coin():
     print("Current BTC :", btc_amount)
     print("Current ETH :", eth_amount)
 
-    if btc_amount / total_amount > 0.6:
+    if btc_amount / total_amount > 0.55:
         TICKER = eth_ticker
         percent_result = eth_amount / total_amount * 100
     else:
